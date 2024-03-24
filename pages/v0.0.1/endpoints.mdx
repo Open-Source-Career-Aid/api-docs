@@ -1,0 +1,402 @@
+# Endpoints (24 March 2024)
+
+### GET `/getcsrf`
+
+- Description: This endpoint is used to retrieve the CSRF (Cross-Site Request Forgery) token from the server. The CSRF token is used to prevent CSRF attacks where unauthorized commands are transmitted from a user that the web application trusts.
+
+- Request Parameters: None. This is a GET request and does not require any parameters.
+
+- Response: The response is a JSON object containing the CSRF token. The key for the CSRF token in the JSON object is 'csrf'. For example: `{'csrf': 'CSRF_TOKEN_VALUE'}`.
+
+#### Example usage
+
+```js copy
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+function App() {
+  const [csrfToken, setCsrfToken] = useState('');
+
+  useEffect(() => {
+    // Fetch the CSRF token when the component mounts
+    axios.get('/getcsrf')
+      .then(response => {
+        setCsrfToken(response.data.csrf);
+      })
+      .catch(error => {
+        console.error('Error fetching CSRF token', error);
+      });
+  }, []);
+
+  // Use the CSRF token in your other API requests
+  // ...
+
+  return (
+    <div className="App">
+      {/* Render your application */}
+    </div>
+  );
+}
+
+export default App;
+```
+
+### GET `/gettopicname`
+
+- Description: This endpoint is used to retrieve the name of the topic for the current date.
+
+- Request Parameters: None. The endpoint does not require any request parameters as it retrieves the topic based on the current date.
+
+- Response: The response is a JSON object containing the following fields:
+
+    `topic`: The name of the topic for the current date. <br />
+    `url`: The URL associated with the topic. <br />
+    `newuser`: A boolean indicating whether the user is new or not. <br />
+    `dumblevel`: The level of the user. <br />
+    `special_id`: A special identifier associated with the user. <br />
+    `message`: A message associated with the topic. <br />
+    `newgame`: A boolean indicating whether it's a new game or not. <br />
+    `levellist`: A list of levels associated with the user. <br />
+    `dq`: The user's dq value, rounded to one decimal place. <br />
+    `score`: The user's score.
+    `imageurl`: The URL of the image associated with the topic.
+
+In case of an error, the response will contain the error message.
+
+#### Example usage
+
+```js copy
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const TopicComponent = () => {
+    const [topicData, setTopicData] = useState(null);
+
+    useEffect(() => {
+        axios.get('/gettopicname')
+            .then(response => {
+                setTopicData(response.data);
+            })
+            .catch(error => {
+                console.error('There was an error!', error);
+            });
+    }, []);
+
+    return (
+        <div>
+            {topicData && (
+                <div>
+                    <h2>Topic: {topicData.topic}</h2>
+                    <p>URL: {topicData.url}</p>
+                    <p>New User: {topicData.newuser ? 'Yes' : 'No'}</p>
+                    <p>Level: {topicData.dumblevel}</p>
+                    <p>Special ID: {topicData.special_id}</p>
+                    <p>Message: {topicData.message}</p>
+                    <p>New Game: {topicData.newgame ? 'Yes' : 'No'}</p>
+                    <p>Level List: {topicData.levellist.join(', ')}</p>
+                    <p>DQ: {topicData.dq}</p>
+                    <p>Score: {topicData.score}</p>
+                    <img src={topicData.imageurl} alt="Topic" />
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default TopicComponent;
+```
+
+### GET `/getexplanation`
+
+Description: This endpoint is used to retrieve the explanation for a specific level. The level is specified in the request parameters.
+
+Request Parameters:
+
+`level`: (string) The level for which the explanation is to be retrieved. This is a required parameter.
+
+Response:
+
+`status`: (string) The status of the request. Possible values are "success" and "error".
+`message`: (string) A message describing the result of the request. In case of an error, this will contain the error message.
+`data`: (object) Contains the explanation for the requested level. This field is only present in the response if the status is "success". The object contains the following fields:
+`level`: (string) The level for which the explanation was requested.
+`explanation`: (string) The explanation for the level.
+
+#### Example usage
+
+```js copy
+import React, { useEffect, useState } from 'react';
+
+function ExplanationComponent() {
+  const [explanation, setExplanation] = useState(null);
+
+  useEffect(() => {
+    const level = 'beginner'; // replace with the actual level
+    fetch(`/getexplanation?level=${level}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          setExplanation(data.data.explanation);
+        } else {
+          console.error('Error:', data.message);
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  }, []);
+
+  return (
+    <div>
+      {explanation ? (
+        <p>{explanation}</p>
+      ) : (
+        <p>Loading explanation...</p>
+      )}
+    </div>
+  );
+}
+
+export default ExplanationComponent;
+```
+
+### POST `/getquestion`
+
+- Description: This endpoint is used to get the question and options for a level. The level is passed in the body of the request. The response is a json object with the question and options. The question is in the key 'question' and the options are in the keys 'option1', 'option2', 'option3', 'option4', 'option5'. The special_id is 0 which tells the frontend to do nothing.
+
+- Request parameters:
+
+`level``: The level for which the question is requested. The level is an integer from 1 to 5.
+
+- Response:
+
+`question`: The question for the level. The question is a string. It is a string that contains the question, options and labels. The question is in the format: <q>question</q>. The options are in the format: <o>option</o>. The labels are in the format: <l>label</l>. <br />
+    `option1`: The first option for the question. The option is a string. <br />
+    `option2`: The second option for the question. The option is a string. <br />
+    `option3`: The third option for the question. The option is a string. <br />
+    `option4`: The fourth option for the question. The option is a string. <br />
+    `option5`: The fifth option for the question. The option is a string. <br />
+    `label`: The label for the question. The label is a string.
+
+    `special_id`: The special_id is 0 which tells the frontend to do nothing.
+
+#### Example usage
+
+```js copy
+const getQuestion = async (level) => {
+    const response = await fetch('http://localhost:8000/get_question', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            level: level
+        })
+    });
+    const data = await response.json();
+    console.log(data);
+}
+```
+
+### POST `/submitanswer`
+
+- Description: This endpoint is used to submit the answer for a question.
+
+- Request Parameters:
+
+    `answer`: The answer to the question. It is an integer value.
+
+- Response:
+
+    `score`: The score of the user after submitting the answer. It is a float value. <br />
+    `correctoption`: The correct option for the question. It is an integer value. <br />
+    `gameended`: A boolean value indicating whether the game has ended. It is a boolean value. <br />
+    `special_id`: A special id for the response. It is an integer value. <br />
+    `message`: A message for the user. It is a string value.
+
+#### Example Usage:
+
+```js copy
+fetch('http://localhost:8000/api/submit_answer/', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        answer: 1,
+    }),
+})
+    .then((response) => response.json())
+    .then((data) => {
+        console.log(data);
+    });
+```
+
+### GET `/getdqstreak`
+
+- Description: This endpoint is used to get the DQ and Streak of the user.
+
+- Request Parameters: None
+
+- Response:
+
+    `dq`: The DQ of the user. It is a float value. <br />
+    `scoretoday`: The score of the user for today. It is a float value. <br />
+    `maxstreak`: The maximum streak of the user. It is an integer value. <br />
+    `change`: The change in DQ. It is an integer value. <br />
+    `airesponse`: The AI response for the user. It is a string value. <br />
+    `weekstart`: The start date of the week. It is a string value. <br />
+    `weekend`: The end date of the week. It is a string value. <br />
+    `special_id`: A special id for the response. It is an integer value. <br />
+    `weeklylist`: The list of weekly DQ values. It is a JSON string. <br />
+    `subscribe`: A boolean value indicating whether the user is subscribed. It is a boolean value.
+
+#### Example Usage:
+
+```js copy
+fetch('http://localhost:8000/api/get_dq_streak/', {
+    method: 'GET',
+})
+    .then((response) => response.json())
+    .then((data) => {
+        console.log(data);
+    });
+```
+
+### GET `/getwaitingtime`
+
+- Description: This endpoint is used to get the waiting time for the user.
+
+- Request Parameters: None
+
+- Response:
+
+    `waitingtime`: The waiting time for the user. It is an integer value. <br />
+    `special_id`: A special id for the response. It is an integer value.
+
+#### Example Usage:
+
+```js copy
+fetch('http://localhost:8000/api/get_waiting_time/', {
+    method: 'GET',
+})
+    .then((response) => response.json())
+    .then((data) => {
+        console.log(data);
+    });
+```
+
+### GET `/gettheme`
+
+- Description: This endpoint is used to get the theme for the user.
+
+- Request Parameters:
+
+    `theme`: The theme of the user. It is a string value.
+
+- Response:
+
+    `theme`: The theme of the user. It is a string value.
+
+#### Example Usage:
+
+```js copy
+fetch('http://localhost:8000/api/get_theme/', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        theme: "dark",
+    }),
+})
+    .then((response) => response.json())
+    .then((data) => {
+        console.log(data);
+    });
+```
+
+### GET `/getshareimage`
+
+- Description: This endpoint is used to get the share image for the user.
+
+- Request Parameters:
+
+    `image`: The image file to be shared. It is a file object.
+
+- Response:
+
+    `url`: The URL of the shared image. It is a string value.
+
+#### Example Usage:
+
+```js copy
+const formData = new FormData();
+formData.append('image', file);
+
+fetch('http://localhost:8000/api/get_share_image/', {
+    method: 'POST',
+    headers: {
+
+    },
+    body: formData,
+})
+    .then((response) => response.json())
+    .then((data) => {
+        console.log(data);
+    });
+```
+
+### POST `/subscribe`
+
+- Description: This endpoint is used to subscribe the user to the newsletter.
+
+- Request Parameters:
+
+    `email`: The email of the user. It is a string value.
+
+- Response:
+
+    `message`: A message for the user. It is a string value.
+
+#### Example Usage:
+
+```js copy
+fetch('http://localhost:8000/api/subscribe/', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        email: "EMAIL",
+    }),
+})
+    .then((response) => response.json())
+    .then((data) => {
+        console.log(data);
+    });
+```
+
+### GET `/getleaderboard`
+
+- Description: This endpoint is used to get the leaderboard of the user.
+
+- Request Parameters: None
+
+- Response:
+
+    `data`: The data for the leaderboard. It is a JSON object. <br />
+    `addschool`: A boolean value indicating whether to add the school. It is a boolean value.
+
+#### Example Usage:
+
+```js copy
+fetch('http://localhost:8000/api/get_leaderboard/', {
+    method: 'GET',
+})
+    .then((response) => response.json())
+    .then((data) => {
+        console.log(data);
+    });
+```
